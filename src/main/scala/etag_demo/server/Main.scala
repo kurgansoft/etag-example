@@ -2,6 +2,7 @@ package etag_demo.server
 
 import etag_demo.common.{Catalogue, EndpointDefinitions}
 import zio.http.Header.ETag.Strong
+import zio.http.endpoint.openapi.{OpenAPI, OpenAPIGen, SwaggerUI}
 import zio.http.{Route, Routes, Server}
 import zio.{&, Duration, Fiber, Ref, Scope, ZEnvironment, ZIO, ZIOAppDefault}
 
@@ -11,7 +12,8 @@ object Main extends ZIOAppDefault {
     catalogueRef <- Ref.make(CatalogueGenerator.data(1))
     updateFiberId <- updateCatalogueEffect.provideEnvironment(ZEnvironment(catalogueRef)).fork
     fiberIdRef <- Ref.make(updateFiberId)
-    routes = Routes(getCatalogueRoute, getCatalogueRouteWithETag, resetRoute).provideEnvironment(ZEnvironment(catalogueRef).add(fiberIdRef))
+    routes = Routes(getCatalogueRoute, getCatalogueRouteWithETag, resetRoute)
+      .provideEnvironment(ZEnvironment(catalogueRef).add(fiberIdRef)) ++ openAPIRoute
     _ <- Server.serve(routes).provide(Server.default)
     _ <- ZIO.never
   } yield ()
@@ -48,6 +50,14 @@ object Main extends ZIOAppDefault {
     newFiberId <- updateCatalogueEffect.provideEnvironment(ZEnvironment(catalogueRef)).forkDaemon
     _ <- fiberIdRef.set(newFiberId)
   } yield ())
+
+  private val openAPI: OpenAPI = OpenAPIGen.fromEndpoints(title = "ETag Example", version = "1.0",
+    EndpointDefinitions.reset,
+    EndpointDefinitions.getCatalogue,
+    EndpointDefinitions.getCatalogueWithETag
+  )
+
+ private val openAPIRoute = SwaggerUI.routes("docs", openAPI)
 
   private val updateCatalogueEffect: ZIO[Ref[Catalogue], Nothing, Unit] = for {
     catalogueRef <- ZIO.service[Ref[Catalogue]]
