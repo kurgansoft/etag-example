@@ -3,14 +3,16 @@ package etag_demo.client
 import etag_demo.common.Catalogue
 import etag_demo.common.EndpointDefinitions.{getCatalogueWithETag, reset}
 import zio.http.Header.ETag
-import zio.http.{Client, Header}
 import zio.http.endpoint.EndpointExecutor
+import zio.http.{Client, Header}
 import zio.{NonEmptyChunk, Ref, Scope, ZIO, ZIOAppDefault}
 
-object Client2 extends ZIOAppDefault {
+object Client2 extends ZIOAppDefault with EndpointLocatorResolver {
 
   override def run: ZIO[Scope, Unit, Unit] = (for {
-    executor <- ZIO.service[EndpointExecutor[Any, Unit]]
+    endpointLocator <- resolveEndpointLocator
+    client <- ZIO.service[Client]
+    executor = EndpointExecutor(client, endpointLocator)
 
     _ <- ZIO.log("calling reset endpoint")
     _ <- executor(reset())
@@ -65,9 +67,7 @@ object Client2 extends ZIOAppDefault {
     noOfTimesWeHaveSavedSomeBandwidthAsNumber <- noOfTimesWeHaveSavedSomeBandwidth.get
     _ <- ZIO.log(s"\n\tWe have executed $noOfBandwidthWastingCallsAsNumber bandwidth wasting calls.")
     _ <- ZIO.log(s"\n\tWe have saved some bandwidth $noOfTimesWeHaveSavedSomeBandwidthAsNumber times.")
-  } yield ()).provide(
-    EndpointExecutor.make(serviceName = "server").orDie,
-    Client.default.orDie,
-    Scope.default,
+  } yield ()).provideSome(
+    Client.default.orDie
   )
 }

@@ -51,10 +51,11 @@ object Main extends ZIOAppDefault {
     _ <- fiberIdRef.set(newFiberId)
   } yield ())
 
+  // With zio-http 3.4.0 OpenAPI generation crashes for the endpoints that are commented out.
   private val openAPI: OpenAPI = OpenAPIGen.fromEndpoints(title = "ETag Example", version = "1.0",
-    EndpointDefinitions.reset,
+//    EndpointDefinitions.reset,
     EndpointDefinitions.getCatalogue,
-    EndpointDefinitions.getCatalogueWithETag
+//    EndpointDefinitions.getCatalogueWithETag
   )
 
  private val openAPIRoute = SwaggerUI.routes("docs", openAPI)
