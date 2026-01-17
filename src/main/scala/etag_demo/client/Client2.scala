@@ -7,12 +7,12 @@ import zio.http.endpoint.EndpointExecutor
 import zio.http.{Client, Header}
 import zio.{NonEmptyChunk, Ref, Scope, ZIO, ZIOAppDefault}
 
-object Client2 extends ZIOAppDefault with EndpointLocatorResolver {
+object Client2 extends ZIOAppDefault with UrlResolver {
 
   override def run: ZIO[Scope, Unit, Unit] = (for {
-    endpointLocator <- resolveEndpointLocator
+    url <- resolveUrl
     client <- ZIO.service[Client]
-    executor = EndpointExecutor(client, endpointLocator)
+    executor = EndpointExecutor(client, url)
 
     _ <- ZIO.log("calling reset endpoint")
     _ <- executor(reset())
@@ -67,7 +67,7 @@ object Client2 extends ZIOAppDefault with EndpointLocatorResolver {
     noOfTimesWeHaveSavedSomeBandwidthAsNumber <- noOfTimesWeHaveSavedSomeBandwidth.get
     _ <- ZIO.log(s"\n\tWe have executed $noOfBandwidthWastingCallsAsNumber bandwidth wasting calls.")
     _ <- ZIO.log(s"\n\tWe have saved some bandwidth $noOfTimesWeHaveSavedSomeBandwidthAsNumber times.")
-  } yield ()).provideSome(
+  } yield ()).provideSome[Scope](
     Client.default.orDie
   )
 }

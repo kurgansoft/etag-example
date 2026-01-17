@@ -2,13 +2,12 @@ package etag_demo.client
 
 import zio.ZIO
 import zio.http.URL
-import zio.http.endpoint.EndpointLocator
 
-trait EndpointLocatorResolver {
+trait UrlResolver {
 
   private val defaultUrl: zio.http.URL = URL.decode("http://localhost:8080").toOption.get
 
-  protected val resolveEndpointLocator: ZIO[Any, Unit, EndpointLocator] = for {
+  protected val resolveUrl: ZIO[Any, Unit, URL] = for {
     custom <- zio.System.envOrOption("SERVER_URL", None).orDie
 
     url <- custom match {
@@ -19,6 +18,5 @@ trait EndpointLocatorResolver {
           case Right(value) => ZIO.succeed(value)
         }
     }
-    endpointLocator = EndpointLocator.fromURL(url)
-  } yield endpointLocator
+  } yield url
 }
