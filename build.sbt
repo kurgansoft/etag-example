@@ -9,7 +9,7 @@ lazy val root = (project in file("."))
     name := "ETag Example",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio" % zioVersion,
-      "dev.zio" %% "zio-http" % "3.7.4",
+      "dev.zio" %% "zio-http" % "3.8.0",
       "dev.zio" %% "zio-test" % zioVersion % Test
     ),
   )
